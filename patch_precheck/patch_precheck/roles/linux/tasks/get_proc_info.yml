@@ -1,0 +1,15 @@
+---
+  - name: "Get Proc | Check given Process is running in the system"
+    block:
+      - name: "Get Proc | Check given process is available in the running process list"
+        shell: "echo \"{{ all_process_list }}\" | grep -i {{ item }} | grep -v grep"
+        register: fetched_process_list
+      
+      - name: "Get Proc | Update HTML line - If Given process is found in running process list"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Process {{ item }} </td><td><font color=\"green\"><b> OK </b></font></td><td> N/A </td></tr>' ]"
+        when: fetched_process_list.rc == 0
+    rescue:
+      - name: "Get Proc | Update HTML line - If Given process is NOT found in running process list"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Process {{ item }} </td><td><font color=\"red\"><b> NOT-OK </b></font></td><td> N/A </td></tr>' ]"

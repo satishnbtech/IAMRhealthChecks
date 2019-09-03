@@ -1,0 +1,87 @@
+---
+  - name: "Main | #### Check File System Utilization ####"
+    include_tasks: get_fs_utilization.yml
+    with_items: "{{ LINUX_FILE_SYSTEMS }}"
+
+  - name: "Main | #### Check Service Status ####"
+    block:
+      - name: "Main | Check kdump Service Status"
+        service_facts:
+
+      - name: "Main | Update HTML file - For Kdump Service"
+        block:
+          - name: "Main | Update HTML file - If Kdump Service found in system"
+            set_fact:
+              html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Service kdump </td><td><font color=\"green\"><b> OK </b></font></td><td> N/A </td></tr>' ]"
+            when: ansible_facts.services['kdump.service']['state'] == "running"
+            
+        rescue:
+          - name: "Main | Update HTML file - If Kdump Service NOT found in system"
+            set_fact:
+              html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Service kdump </td><td><font color=\"red\"><b> NOT-OK </b></font></td><td> N/A </td></tr>' ]"
+    rescue:
+      - name: "Main | Update HTML file - If Kdump Service NOT found in system"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Service kdump </td><td><font color=\"red\"><b> FAILED </b></font></td><td> Failed to get Service Information. </td></tr>' ]"
+
+  - name: "Main | #### Check Package Information ####"
+    block:
+      - name: "Main | List Packages"
+        package_facts:
+          manager: auto
+
+      - name: "Main | Get Package Info"
+        include_tasks: get_pkg_info.yml
+        with_items: "{{ LINUX_PKG_LIST }}"
+    
+    rescue:
+      - name: "Main | Update HTML file - If Kdump Service NOT found in system"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Service kdump </td><td><font color=\"red\"><b> FAILED </b></font></td><td> Failed to get Service Information. </td></tr>' ]"
+
+  - name: "Main | #### Check given processes are running ####"
+    block:
+      - name: "Main | Get All Process"
+        shell: "ps -ef"
+        register: all_process_list
+        
+      - name: "Main | Check Process are running ?"
+        include_tasks: get_proc_info.yml
+        with_items: 
+          - "crs"
+          - "eds"
+          - "xfs"
+    rescue:
+      - set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Process </td><td><font color=\"red\"><b> Failed </b></font></td><td> Failed to get running Process. {{ all_process_list.stderr }} </td></tr>' ]"
+
+  - name: "Main | #### Get Firmware Details #### "
+    block:
+      - name: "Main | Run dmidecode command"
+        shell: "unameaw"
+        register: dmidecode_output
+        
+      - set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Output dmidecode </td><td><font color=\"green\"><b> OK </b></font></td><td> {{ dmidecode_output.stdout }} </td></tr>' ]"
+        when: dmidecode_output.rc == 0
+    rescue:
+      - set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Output dmidecode </td><td><font color=\"red\"><b> FAILED </b></font></td><td> Failed to Execute Command \"\" </td></tr>' ]"
+
+#  - name: "Main | Print Ansible Mounts"
+#    debug:
+#      msg: "{{ ansible_mounts }}"
+
+#  - name: "Main | Update HTML file - For CRS Process - Failure"
+#    set_fact:
+#      html_email_lines: "{{ html_email_lines }} + [ 'CRS Processes - NOT_OK' ]"
+#    when: crs_process_list.rc != 0
+
+#  - name: "Main | Get File System Utilization"
+#    include_tasks: "{{ PATCH_PRECHECK_TASKS }}/linux/get_fs_utilization.yml"
+#    with_items: "{{ ansible_mounts }}"
+
+#  - name: "Main | checks 3ekm"
+#    debug:
+#      msg: "{{ item.mount }} - {{ item.size_total }} - {{ item.size_available }}"
+#    with_items: "{{ ansible_mounts }}"

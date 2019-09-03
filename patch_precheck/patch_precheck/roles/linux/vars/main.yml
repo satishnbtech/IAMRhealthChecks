@@ -1,0 +1,14 @@
+---
+LINUX_FILE_SYSTEMS:
+  - "/root"
+  - "/boot"
+  - "/var"
+  - "/tmp"
+  - "/usr"
+  - "/opt"
+LINUX_PKG_LIST:
+  - "dbpatch"
+  - "emc"
+  - "Dbhpsum"
+  - "eds"
+  - "httpd"

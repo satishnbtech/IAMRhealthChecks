@@ -1,0 +1,84 @@
+---
+  - name: "GET FS | Get available space for given mount-point"
+    block:
+      - name: "GET FS | Get File System details for given mount point"
+        shell: "df -k {{ item }}"
+        register: filesystem_detail
+      
+      - name: "GET FS | Get File System available space"
+        shell: "echo \"{{ filesystem_detail.stdout }}\" | tail -n 1 | awk {'print $4'}  | sed 's/%//g'"
+        register: filesystem_avail
+
+      - name: "GET FS | Get File System mount point"
+        shell: "echo \"{{ filesystem_detail.stdout }}\" | tail -n 1 | awk {'print $6'}  | sed 's/%//g'"
+        register: filesystem_mount
+
+      - name: "GET FS | Calculate free space if its less than 1 GB"
+        set_fact:
+          available_space: "{{ filesystem_avail.stdout|int / 1024 | int }} MB"
+        when: filesystem_avail.stdout|int <= 1048576
+
+      - name: "GET FS | Calculate free space if its more than 1 GB"
+        set_fact:
+          available_space: "{{ filesystem_avail.stdout|int / 1048576 | int }} GB"
+        when: filesystem_avail.stdout|int >= 1048576
+
+      - name: "GET FS | Update HTML line - If Disk Utilization is OK"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Mount {{ item }} </td><td><font color=\"green\"><b> OK </b></font></td><td> Available Space - {{ available_space }} </td></tr>' ]"
+        when: ( item == "/tmp" and filesystem_avail.stdout|int >= 1048576 ) or
+              ( item == "/opt" and filesystem_avail.stdout|int >= 524288 ) or
+              ( item == "/boot" and filesystem_avail.stdout|int >= 40960 )
+
+      - name: "GET FS | Update HTML line - If Disk Utilization is NOT_OK"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Mount {{ item }} </td><td><font color=\"red\"><b> NOT-OK </b></font></td><td> Available Space - {{ available_space }} </td></tr>' ]"
+        when: ( item == "/tmp" and filesystem_avail.stdout|int <= 1048576 ) or
+              ( item == "/opt" and filesystem_avail.stdout|int <= 524288 ) or
+              ( item == "/boot" and filesystem_avail.stdout|int <= 40960 )
+
+      ################################################################################################################
+
+      - name: "GET FS | Update HTML line - if /usr and /var in root - Disk Utilization is OK"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Mount {{ item }} </td><td><font color=\"green\"><b> OK </b></font></td><td> Available Space - {{ available_space }} </td></tr>' ]"
+        when: ( item == "/var" and filesystem_mount.stdout == "/" and filesystem_avail.stdout|int >= 3145728 ) or
+              ( item == "/usr" and filesystem_mount.stdout == "/" and filesystem_avail.stdout|int >= 3145728 )
+
+      - name: "GET FS | Update HTML line -  if /usr and /var in root - Disk Utilization is NOT_OK"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Mount {{ item }} </td><td><font color=\"red\"><b> NOT-OK </b></font></td><td> Available Space - {{ available_space }} </td></tr>' ]"
+        when: ( item == "/var" and filesystem_mount.stdout == "/" and filesystem_avail.stdout|int <= 3145728 ) or
+              ( item == "/usr" and filesystem_mount.stdout == "/" and filesystem_avail.stdout|int <= 3145728 )
+
+      ################################################################################################################
+
+      - name: "GET FS | Update HTML line - if /usr and /var NOT in root - Disk Utilization is OK"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Mount {{ item }} </td><td><font color=\"green\"><b> OK </b></font></td><td> Available Space - {{ available_space }} </td></tr>' ]"
+        when: ( item == "/var" and filesystem_mount.stdout != "/" and filesystem_avail.stdout|int >= 1048576 ) or
+              ( item == "/usr" and filesystem_mount.stdout != "/" and filesystem_avail.stdout|int >= 1048576 )
+
+      - name: "GET FS | Update HTML line - if /usr and /var NOT in root - Disk Utilization is NOT_OK"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Mount {{ item }} </td><td><font color=\"red\"><b> NOT-OK </b></font></td><td> Available Space - {{ available_space }} </td></tr>' ]"
+        when: ( item == "/var" and filesystem_mount.stdout != "/" and filesystem_avail.stdout|int <= 1048576 ) or
+              ( item == "/usr" and filesystem_mount.stdout != "/" and filesystem_avail.stdout|int <= 1048576 )
+              
+    rescue:
+      - name: "GET FS | Update HTML line - if fails to find available space for given mount-point"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Mount {{ item }} </td><td><font color=\"red\"><b> FAILED </b></font></td><td> Failed to get available space. </td></tr>' ]"
+
+#  - name: "checks fg"
+#    debug:
+#      msg: "{{ item.mount }} - {{ item.size_total }} - {{ item.size_available }}"
+#    with_items: "{{ ansible_mounts }}"
+#
+#  - debug:
+#      msg: "{{ ((item.size_total - item.size_available) / item.size_total) * 100 }}"
+#
+#  - name: "Update HTML file"
+#    set_fact:
+#      html_email_lines: "{{ html_email_lines }} + [ '{{ filesystem_out.stdout }}' ]"
+#    when: item.size_total / item.size_available >= "0.1"

@@ -1,0 +1,59 @@
+- name: read the csv file provided and display the output as list.
+  hosts: localhost
+  gather_facts: false
+  vars:
+     item_csvpath: Input.csv
+  
+  handlers:
+   - name: " read csv file and display the output as dictionary"
+     read_csv:
+         path: '{{ item_csvpath }}'   
+         delimiter: ','
+     register: csv_result
+     
+   - debug:
+       msg: "{{item}}"
+     with_dict: "{{ csv_result }}"
+     listen: "display items as dictionary"
+
+  tasks:
+   - name: "Step:1 read csv file and display the output as list"
+     include_tasks: read_csv.yml
+   - debug:
+       msg: "{{ item.fruit }} {{ item.price }}"
+     with_items: "{{ csv_result.list }}"
+
+   - name: "Step:2 read csv file and display the output as dictionary"
+     include_tasks: read_csv.yml
+   - debug:
+       msg: "{{item}}"
+     with_dict: "{{ csv_result }}" 
+
+   - name: "step:3 task to display the key value pair where the key is 'Apple'"
+     include_tasks: read_csv.yml
+   - debug:
+        msg: "{{ item.fruit }} {{ item.price }}"
+     with_items: "{{ csv_result.list }}"
+     when: item.fruit =='Apple'
+
+   - name: "Step:4 Insert a 'key=Strawberry' & 'value=120' between the key value pair of 'Apple' and 'Orange'"
+     lineinfile:
+        path: Input.csv
+        insertbefore: "Orange,80"
+        line: "Strawberry,120"
+
+   - name: display the items as dictionary with the values sorted in ascending order
+     read_csv:
+       path: Input.csv
+       delimiter: ','
+       fieldnames: fruit,price
+       key: fruit
+     register: result_1
+   - debug:
+       msg: "{{ result_1.dict }}" 
+    
+   - name: "display all the items including the inserted item as dictionary"
+     command: echo "this task will display the items as dictionary"
+     notify: "display items as dictionary"
+
+

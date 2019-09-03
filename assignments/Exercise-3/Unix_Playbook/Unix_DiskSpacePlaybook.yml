@@ -1,0 +1,17 @@
+---
+- name: Display Disk space for Unix systems
+  hosts: ALLUNIX
+  tasks:
+
+  - block:
+
+      - name: "Server name: {{inventory_hostname}}"
+        debug:
+          msg: "{{ansible_nodename}}"
+      - name: Check the drive space using df -H command
+        shell: df -h
+        register: disk_space
+
+      - name: Print disk space output
+        debug:
+          msg: "{{ disk_space.stdout_lines }}"

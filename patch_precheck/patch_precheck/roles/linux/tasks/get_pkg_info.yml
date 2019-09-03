@@ -1,0 +1,12 @@
+---
+  - name: "Get PKG | Check if given package is available in the package_facts"
+    block:
+      - name: "Get PKG | Update HTML line - if given package is available in the system"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Package {{ item }} </td><td><font color=\"green\"><b> OK </b></font></td><td> N/A </td></tr>' ]"
+        when: ansible_facts.packages[item][0]['name'] == item
+        
+    rescue:
+      - name: "Get PKG | Update HTML line - if given package is NOT available in the system"
+        set_fact:
+          html_email_lines: "{{ html_email_lines }} + [ '<tr align=\"center\"><td> Package {{ item }} </td><td><font color=\"red\"><b> NOT-OK </b></font></td><td> N/A </td></tr>' ]"

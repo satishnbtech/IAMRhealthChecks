@@ -1,0 +1,22 @@
+---
+- name: Display Disk space for Unix systems
+  hosts: ALLWIN
+  tasks:
+
+  - block:
+
+      - name: "Server name: {{inventory_hostname}}"
+        debug:
+          msg: "{{ansible_nodename}}"
+      - name: Check the drive space using PowershellScript
+        win_shell: |
+            $vol=Get-WmiObject  Win32_Volume 
+            $vol | ft –auto DriveLetter,Label,@{Label=”Free(GB)”;Expression={“{0:N0}” –F ($_.FreeSpace/1GB)}},`
+            @{Label=”%Free”;Expression={“{0:P0}” –F ($_.FreeSpace/$_.Capacity)}} 
+            
+
+        register: disk_space
+
+      - name: Print disk space output
+        debug:
+          msg: "{{ disk_space.stdout_lines }}"

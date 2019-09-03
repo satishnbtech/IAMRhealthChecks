@@ -1,0 +1,4 @@
+---
+PATCH_PRECHECK_TASKS: /home/ragu/patch_precheck/tasks
+LOCAL_LOG_LOCATION: /var/tmp
+html_email_lines: []

@@ -1,0 +1,16 @@
+---
+- hosts: all
+  tasks:
+    - name: "Main | Run the Patch Pre-check Roles - Linux"
+      import_role:
+        name: linux
+      when: ansible_system == "Linux"
+
+    - name: "Main | Run the Patch Pre-check Roles - SunOS"
+      import_role:
+        name: sunos
+      when: ansible_system == "SunOS"
+      
+    - name: "Main | Run the Common Roles - Linux"
+      import_role:
+        name: common

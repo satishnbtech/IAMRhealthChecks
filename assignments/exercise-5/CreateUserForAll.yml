@@ -1,0 +1,46 @@
+---
+- name: create testuser for all serversI
+  hosts: ALL
+  tasks:
+
+  - block:
+
+      - name: Create User in  Unix
+        user:
+          name: testuser
+          state: present
+          password: ansible
+        when: ansible_system == "Linux"
+        become: yes
+        become_user: root
+
+      - name: Provide sudo previlege to Ubuntu
+        user:
+          name: testuser
+          group: sudo
+        when: ansible_distribution == "Ubuntu"
+        become: yes
+        become_user: root
+
+      - name: Set authorized key taken from file
+        authorized_key:
+          user: testuser
+          state: present
+          key: "{{ lookup('file', '/home/ansible/.ssh/id_rsa.pub') }}"
+        when: ansible_system == "Linux"
+        become: yes
+        become_user: root
+
+      - name: Create user in  Windows
+        win_user:
+          name: testuser
+          state: present
+          password: Ansible#12345 
+        when: ansible_system == "Win32NT"
+
+      - name: Provide sudo previlege to user - Windows
+        win_user:
+          name: testuser
+          groups:
+            - Administrators
+        when: ansible_system == "Win32NT"

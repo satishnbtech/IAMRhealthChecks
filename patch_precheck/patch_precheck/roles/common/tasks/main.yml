@@ -1,0 +1,38 @@
+---
+  - name: "Main | Remove Old HTML File - Before Creating"
+    file:
+      path: "{{ LOCAL_LOG_LOCATION }}/{{ ansible_hostname }}.html"
+      state: absent
+    delegate_to: 127.0.0.1
+
+
+  - name: "Main | Write HTML Header"
+    lineinfile:
+      path: "{{ LOCAL_LOG_LOCATION }}/{{ ansible_hostname }}.html"
+      line: "<html><body><br><br><table border=\"1\" style=\"border-collapse: collapse;\"><tr align=\"left\"><td><b> Hostname </b></td><td> {{ ansible_hostname }} </td></tr> <tr align=\"left\"><td><b> Kernel Version </b></td><td> {{ ansible_kernel }} </td></tr><tr align=\"left\"><td><b> OS Type </b></td><td> {{ ansible_system }} </td></tr> <tr align=\"left\"><td><b> OS Family </b></td><td> {{ ansible_os_family }} </td></tr> </table><br><br><table border=\"2\" style=\"border-collapse: collapse;\"><tr><th> Item </th><th> Status </th> <th> Output </th></tr>"
+      create: yes
+      state: present
+    delegate_to: 127.0.0.1
+
+  - name: "Main | Write HTML - Line-by-Line"
+    lineinfile:
+      path: "{{ LOCAL_LOG_LOCATION }}/{{ ansible_hostname }}.html"
+      line: "{{ item }}"
+      create: yes
+      state: present
+    with_items: "{{ html_email_lines }}"
+    delegate_to: 127.0.0.1
+    
+  - name: "Main | Write HTML Footer"
+    lineinfile:
+      path: "{{ LOCAL_LOG_LOCATION }}/{{ ansible_hostname }}.html"
+      line: "</table></body></html>"
+      create: yes
+      state: present
+    delegate_to: 127.0.0.1
+    
+#  - name: "Common-Tasks-Main | Remove Old HTML File"
+#    file:
+#      path: "{{ LOCAL_LOG_LOCATION }}/{{ ansible_hostname }}.html"
+#      state: absent
+#    delegate_to: 127.0.0.1

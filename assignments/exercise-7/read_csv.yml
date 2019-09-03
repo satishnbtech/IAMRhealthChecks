@@ -1,0 +1,7 @@
+- name: read csv file 
+  read_csv:
+     path: '{{ item_csvpath }}'
+     delimiter: ','
+     fieldnames: fruit,price  
+  register: csv_result
+
